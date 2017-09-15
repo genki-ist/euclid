@@ -409,11 +409,12 @@ class Euclid():
                                                             self.tkimg.width(), self.tkimg.height() )
                         self.classLabelList.append(tmp[0])                        
                     
-
                     self.bboxList.append( bbTuple  )
                     #color set
                     currColor = '#%02x%02x%02x' % (self.redColor, self.greenColor, self.blueColor)
                     self.greenColor = (self.greenColor + 45) % 255
+                    # currColor = setColor(tmp[0])
+
                     tmpId = self.mainPanel.create_rectangle(int(bbTuple[0]), int(bbTuple[1]), \
                                                             int(bbTuple[2]), int(bbTuple[3]), \
                                                             width = 2, \
@@ -423,13 +424,40 @@ class Euclid():
                                                             int(bbTuple[2]), int(bbTuple[3]), tmp[0]))
                     self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = currColor)
 
+    def setColor(colorId):
+        if(colorId == 0):
+            self.redColor = 255;
+            self.greenColor = 0;
+            self.blueColor = 0;
+        elif(colorId == 1):
+            self.redColor = 0;
+            self.greenColor = 255;
+            self.blueColor = 0;
+        elif(colorId == 2):
+            self.redColor = 0;
+            self.greenColor = 0;
+            self.blueColor = 255;
+        elif(colorId == 3):
+            self.redColor = 255;
+            self.greenColor = 255;
+            self.blueColor = 0;
+        elif(colorId == 4):
+            self.redColor = 255;
+            self.greenColor = 0;
+            self.blueColor = 255;
+        else:
+            self.redColor = 0;
+            self.greenColor = 255;
+            self.blueColor = 255;
+        return '#%02x%02x%02x' % (self.redColor, self.greenColor, self.blueColor)
+
+
     def GetBoundariesFromYoloFile(self, centerX, centerY, width, height, imageWidth, imageHeight):
         topLeftX = (int)(centerX*imageWidth - (width*imageWidth)/2)
         topLeftY = (int)(centerY*imageHeight - (height*imageHeight)/2)
         bottomRightX = (int)(centerX*imageWidth + (width*imageWidth)/2)
         bottomRightY = (int)(centerY*imageHeight + (height*imageHeight)/2)
-        return topLeftX, topLeftY, bottomRightX, bottomRightY
-    
+        return topLeftX, topLeftY, bottomRightX, bottomRightY    
 
     def convert2Yolo(self, image, boxCoords):
         
@@ -469,17 +497,20 @@ class Euclid():
         elif self.currLabelMode == 'YOLO':
             with open(self.labelfilename, 'w') as f:
                 labelCnt=0
+                labelList=[]
                 ##class1 center_box_x_ratio center_box_y_ratio width_ratio height_ratio
                 for bbox in self.bboxList:                
                     yoloOut = self.convert2Yolo(
                                 [self.tkimg.width(), self.tkimg.height()], 
                                 [bbox[0], bbox[1], bbox[2], bbox[3]]
                                 );
-                    f.write('%s' %self.classLabelList[labelCnt])               
+                    f.write('%s' %self.classLabelList[labelCnt])  
+                    labelList.append(self.classLabelList[labelCnt])             
                     f.write(' %.7f %.7f %.7f %.7f' % (yoloOut[0], yoloOut[1], yoloOut[2], yoloOut[3]))                 
                     f.write('\n')
                     #tkMessageBox.showinfo("Save Info", message = self.classLabelList[labelCnt])
                     labelCnt = labelCnt+1
+                print labelList
             self.updateStatus ('Label Image No. %d saved' %(self.cur))
             self.AddFileToTrainingList(self.imagefilename);
         else:
@@ -506,9 +537,10 @@ class Euclid():
             self.classLabelList.append(self.currClassLabel)
             self.bboxId = None
             self.listbox.insert(END, '(%d, %d) -> (%d, %d)[Class %d]' %(x1, y1, x2, y2 , self.currClassLabel))
-            #color set
+            # #color set
             currColor = '#%02x%02x%02x' % (self.redColor, self.greenColor, self.blueColor)
-            self.redColor = (self.redColor + 25) % 255         
+            self.redColor = (self.redColor + 25) % 255     
+            # currColor = setColor(self.currClassLabel)    
             self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = currColor)
         self.STATE['click'] = 1 - self.STATE['click']
 
@@ -562,6 +594,7 @@ class Euclid():
         self.bboxIdList.pop(idx)
         self.bboxList.pop(idx)
         self.listbox.delete(idx)
+        self.classLabelList.pop(idx)
 
     def clearBBox(self):
         for idx in range(len(self.bboxIdList)):
@@ -569,6 +602,7 @@ class Euclid():
         self.listbox.delete(0, len(self.bboxList))
         self.bboxIdList = []
         self.bboxList = []
+        self.classLabelList = []
 
     def prevImage(self, event = None):
         self.saveLabel()    
